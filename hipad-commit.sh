@@ -2,8 +2,7 @@
 
 BASEDIR=$(dirname $0)
 
-git config --global commit.template $HOME/.gittemplate
-
+git config --global commit.template ${BASEDIR}/.gittemplate
 
 # 1.Get TAG from file list
 LIST=("project.list" "team.list" "feature.list" "subfeature.list")
@@ -28,8 +27,8 @@ clear
 rm ${BASEDIR}/sort.txt
 
 
-# 2.cp Golden git template to temp file "output.txt"
-cp -p ${BASEDIR}/.gittemplate ${BASEDIR}/output.txt
+# 2.cp .git/COMMIT_EDITMSG to temp file "output.txt"
+cp -p $PWD/.git/COMMIT_EDITMSG ${BASEDIR}/output.txt
 
 
 # 3.parse 1st line [XXX][AAA][BBB][CCC] from .gittemplate and push into array=(XXX,AAA,BBB,CCC)
@@ -52,25 +51,81 @@ while IFS=']' read -r token s <<< "$s"; do
                 fi
 
         else
-                #echo "${array[@]}"
+                echo "${array[@]}"
                 #echo "NULL"
                 break
         fi
 done
-#echo "$array{@}"
+echo "$array{@}"
+
+# 4.Check format is at lease 1 "[XXX]", or will use template
+if [ "${#array[@]}" == "0" ];
+then
+	echo "0"
+	use_template="yes"
+else
+	echo "${#array[@]}"
+	use_template="no"
+fi
 
 
-# 4. Replace array() with TAG))
+echo "$use_template"
+
+# 4.1 .cp .gittemplate to temp file "output.txt"
+if [ "$use_template" == "yes" ];
+then
+	echo "use template now"
+	# cat two files into output.txt
+	cat ${BASEDIR}/.gittemplate $PWD/.git/COMMIT_EDITMSG > ${BASEDIR}/output.txt
+	# 4.2 parse 1st line [XXX][AAA][BBB][CCC] from .gittemplate and push into array=(XXX,AAA,BBB,CCC)
+	array=()
+	s=$(sed -n '1p' ${BASEDIR}/output.txt);
+	while IFS=']' read -r token s <<< "$s"; do
+        #echo "$s"
+        #echo "$token"
+
+        if [ "$token" != "" ];
+        then
+                #echo "$token"
+                IFS='[' read -r test token <<< "$token"
+                if [ "token" != "" ];
+                then
+                        array+=($token)
+                        #echo "$token"
+                else
+                        echo "end"
+                fi
+
+        else
+                echo "${array[@]}"
+                #echo "NULL"
+                break
+        fi
+	done
+else
+	echo "use COMMIT_MSG"
+fi
+
+
+
+# 5. Replace array() with TAG))
 for ((i=0; i<${#array[@]}; i++ ));
 do
-	sed -i -e "s/${array[$i]}/${TAG[$i]}/g" ${BASEDIR}/output.txt
+	if [ "${TAG[$i]}" != "" ];
+	then
+		sed -i -e "s/${array[$i]}/${TAG[$i]}/g" ${BASEDIR}/output.txt
+	else
+		:
+	fi
 done
 
 
 
-# Show our final gittemplate
+# 6.Show our final gittemplate
 dialog --textbox ${BASEDIR}/output.txt 0 0
 clear
 
-# Move to ~/.gittemplate where we will use
-mv -f ${BASEDIR}/output.txt $HOME/.gittemplate
+
+#echo "$use_template"
+# 7.Move to .git/COMMIT_EDITMSG where we will use
+mv -f ${BASEDIR}/output.txt $PWD/.git/COMMIT_EDITMSG
