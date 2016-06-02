@@ -4,51 +4,68 @@ BASEDIR=$(dirname $0)
 
 git config --global commit.template $HOME/.gittemplate
 
-#1 Project list
-source ${BASEDIR}/import.sh ${BASEDIR}/project.list
-PROJECT=$(dialog --clear \
-       --backtitle "$BACKTITLE" \
-       --title "$TITLE" \
-       --menu "$MENU" \
-       $HEIGHT $WIDTH $CHOICE_HEIGHT \
-       "${OPTIONS[@]}" \
-	   2>&1 >/dev/tty)
 
-#2 Feature list
-source ${BASEDIR}/import.sh ${BASEDIR}/feature.list
-FEATURE=$(dialog --clear \
-       --backtitle "$BACKTITLE" \
-       --title "$TITLE" \
-       --menu "$MENU" \
-       $HEIGHT $WIDTH $CHOICE_HEIGHT \
-       "${OPTIONS[@]}" \
-	   2>&1 >/dev/tty)
-
-#3 test list
-#source ${BASEDIR}/import.sh test.list
-#TEST=$(dialog --clear \
-#       --backtitle "$BACKTITLE" \
-#       --title "$TITLE" \
-#       --radiolist "$MENU" \
-#       $HEIGHT $WIDTH $CHOICE_HEIGHT \
-#       "${OPTIONS[@]}" \
-#	   2>&1 >/dev/tty)
+# 1.Get TAG from file list
+LIST=("project.list" "team.list" "feature.list" "subfeature.list")
+TAG=()
+for ((i=0; i<${#LIST[@]}; i++ ));
+do
+sort -o ${BASEDIR}/sort.txt ${BASEDIR}/${LIST[$i]}
+source ${BASEDIR}/import.sh ${BASEDIR}/sort.txt
+VAR=$(dialog --clear \
+	--backtitle "$BACKTITLE" \
+	--title "$TITLE" \
+	--menu "$MENU" \
+	$HEIGHT $WIDTH $CHOICE_HEIGHT \
+	"${OPTIONS[@]}" \
+	2>&1 >/dev/tty)
+#add $VAR to array TAG
+TAG+=($VAR)
+done
 
 clear
+#echo "${TAG[@]}" 
+rm ${BASEDIR}/sort.txt
 
-#cp Golden git template to temp file "output.txt"
+
+# 2.cp Golden git template to temp file "output.txt"
 cp -p ${BASEDIR}/.gittemplate ${BASEDIR}/output.txt
 
 
+# 3.parse 1st line [XXX][AAA][BBB][CCC] from .gittemplate and push into array=(XXX,AAA,BBB,CCC)
+array=()
+s=$(sed -n '1p' ${BASEDIR}/output.txt);
+while IFS=']' read -r token s <<< "$s"; do
+        #echo "$s"
+        #echo "$token"
 
-#1 Replace Project with selection
-sed -i -e "s/Project/$PROJECT/g" ${BASEDIR}/output.txt
+        if [ "$token" != "" ];
+        then
+                #echo "$token"
+                IFS='[' read -r test token <<< "$token"
+                if [ "token" != "" ];
+                then
+                        array+=($token)
+                        #echo "$token"
+                else
+                        echo "end"
+                fi
 
-#2 Replace Component with selection
-sed -i -e "s/Component/$FEATURE/g" ${BASEDIR}/output.txt
+        else
+                #echo "${array[@]}"
+                #echo "NULL"
+                break
+        fi
+done
+#echo "$array{@}"
 
-#3 Replace test with selection
-#sed -i -e "s/Test/$TEST/g" ${BASEDIR}/output.txt
+
+# 4. Replace array() with TAG))
+for ((i=0; i<${#array[@]}; i++ ));
+do
+	sed -i -e "s/${array[$i]}/${TAG[$i]}/g" ${BASEDIR}/output.txt
+done
+
 
 
 # Show our final gittemplate
