@@ -115,8 +115,8 @@ sort -o ${BASEDIR}/sort.txt ${BASEDIR}/project.list
 while IFS= read -r line
 do
 	 PROJECT+=($line)
-	 #use --no-items
-	 #PROJECT+=($line)
+	 #--no-items Version: 1.1-20111020 does not support
+	 PROJECT+=($line)
 done < ${BASEDIR}/sort.txt
 
 #Parsing team.list
@@ -124,8 +124,8 @@ sort -o ${BASEDIR}/sort.txt ${BASEDIR}/team.list
 while IFS= read -r line
 do
 	 TEAM+=($line)
-	 #use --no-items
-	 #TEAM+=($line)
+	 #--no-items Version: 1.1-20111020 does not support
+	 TEAM+=($line)
 done < ${BASEDIR}/sort.txt
 
 #Parsing feature.list
@@ -133,8 +133,8 @@ sort -o ${BASEDIR}/sort.txt ${BASEDIR}/feature.list
 while IFS= read -r line
 do
 	 FEATURE+=($line)
-	 #use --no-items
-	 #FEATURE+=($line)
+	 #--no-items Version: 1.1-20111020 does not support
+	 FEATURE+=($line)
 done < ${BASEDIR}/sort.txt
 
 
@@ -151,22 +151,22 @@ VAR=$(dialog \
 	--title "$TITLE" \
 	--begin 0 0 \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --no-items --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --nocancel \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4)) --keep-window --no-items --nocancel  \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4)) --keep-window --nocancel  \
 	--menu "$MENU_TEAM" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${TEAM[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4*2)) --keep-window --no-items --nocancel  \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4*2)) --keep-window  --nocancel  \
 	--menu "$MENU_FEATURE" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${FEATURE[@]}" \
 	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4*3)) --keep-window --nocancel \
 	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4)) BugID_)
 #add $VAR to TAG()
-TAG=($VAR)
+TAG+=($VAR)
 clear
 rm ${BASEDIR}/sort.txt
 echo "TAG = ${TAG[@]}"
