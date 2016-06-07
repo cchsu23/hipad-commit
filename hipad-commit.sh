@@ -98,6 +98,7 @@ TAG=()
 
 TITLE="Hipad Commit"
 MENU_PROJECT="PROJECT"
+MENU_CUSTOMER="CUSTOMER"
 MENU_TEAM="TEAM"
 MENU_FEATURE="FEATURE"
 
@@ -109,6 +110,16 @@ echo "$SCREEN_WIDTH"
 SCREEN_HEIGHT=$(cut -d " " -f 2 <<< $size | cut -d "," -f 1 )
 let "SCREEN_HEIGHT += 0"
 echo $SCREEN_HEIGHT
+
+
+#------------
+#|          |
+#-----------
+#|  |   |   |
+#------------
+HEIGHT=$((SCREEN_HEIGHT/2))
+WIDTH=$((SCREEN_WIDTH/3))
+CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
 #Parsing project.list
 sort -o ${BASEDIR}/sort.txt ${BASEDIR}/project.list
@@ -128,23 +139,20 @@ do
 	 TEAM+=($line)
 done < ${BASEDIR}/sort.txt
 
-#Parsing feature.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/feature.list
+#Parsing customer.list
+sort -o ${BASEDIR}/sort.txt ${BASEDIR}/customer.list
 while IFS= read -r line
 do
-	 FEATURE+=($line)
+	 CUSTOMER+=($line)
 	 #--no-items Version: 1.1-20111020 does not support
-	 FEATURE+=($line)
+	 CUSTOMER+=($line)
 done < ${BASEDIR}/sort.txt
 
 
-HEIGHT=$((SCREEN_HEIGHT/2))
-WIDTH=$((SCREEN_WIDTH/4))
-CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
+
 
 #Create Dialog by file list
 VAR=$(dialog \
-	--separate-widget " " \
 	--scrollbar \
 	--stderr \
 	--stdout \
@@ -155,21 +163,66 @@ VAR=$(dialog \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4)) --keep-window --nocancel  \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --nocancel --default-item Customer \
+	--menu "$MENU_CUSTOMER" \
+	$HEIGHT $WIDTH $CHOICE_HEIGHT \
+	"${CUSTOMER[@]}" \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window --nocancel \
 	--menu "$MENU_TEAM" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
-	"${TEAM[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4*2)) --keep-window  --nocancel  \
+	"${TEAM[@]}")
+#add $VAR to TAG()
+TAG+=($VAR)
+
+echo "TAG1 = ${TAG[@]}"
+
+
+team=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
+echo "team = $team"
+
+#check the feature_$team.list if exist or not
+( [ -e ${BASEDIR}/"feature_$team".list ] || touch ${BASEDIR}/"feature_$team".list ) && echo "Feature_${TAG[2]}" > ${BASEDIR}/"feature_$team".list
+
+#Parsing feature_team.list
+sort -o ${BASEDIR}/sort.txt ${BASEDIR}/"feature_$team".list
+while IFS= read -r line
+do
+	 FEATURE+=($line)
+	 #--no-items Version: 1.1-20111020 does not support
+	 FEATURE+=($line)
+done < ${BASEDIR}/sort.txt
+
+
+#------------
+#|          |
+#-----------
+#|    |     |
+#------------
+
+HEIGHT=$((SCREEN_HEIGHT/2))
+WIDTH=$((SCREEN_WIDTH/2))
+CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
+
+
+VAR=$(dialog \
+	--scrollbar \
+	--stderr \
+	--stdout \
+	--title "$TITLE" \
+	--begin 0 0 \
+	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window  --nocancel  \
 	--menu "$MENU_FEATURE" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${FEATURE[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4*3)) --keep-window --nocancel \
-	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/4)) BugID_)
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) --keep-window --nocancel \
+	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) BugID_)
 #add $VAR to TAG()
 TAG+=($VAR)
+
 clear
 rm ${BASEDIR}/sort.txt
-echo "TAG = ${TAG[@]}"
+echo "TAG2 = ${TAG[@]}"
 #=============================================================================#
 # 6. Replace array() with TAG()
 echo "Array = ${array[@]}"
