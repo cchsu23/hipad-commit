@@ -161,11 +161,11 @@ VAR=$(dialog \
 	--title "$TITLE" \
 	--begin 0 0 \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --default-item Common --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --default-item --nocancel \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --nocancel --default-item Customer \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --nocancel --default-item Hipad \
 	--menu "$MENU_CUSTOMER" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${CUSTOMER[@]}" \
@@ -178,15 +178,20 @@ TAG+=($VAR)
 
 echo "TAG1 = ${TAG[@]}"
 
+customer=$(echo ${TAG[1]} | tr '[:upper:]' '[:lower:]')
+echo "customer = $customer"
 
 team=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
 echo "team = $team"
 
-#check the feature/$team.list if exist or not
-( [ -e ${BASEDIR}/feature/$team.list ] || touch ${BASEDIR}/feature/$team.list ) && echo "Feature_${TAG[2]}" > ${BASEDIR}/feature/$team.list
+#check the feature/$team/$customer.list if exist or not
+mkdir -p ${BASEDIR}/feature/$team
 
-#Parsing feature/$team.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/feature/$team.list
+
+( [ ! -f ${BASEDIR}/feature/$team/$customer.list ]) && echo "Feature_${TAG[2]}" > ${BASEDIR}/feature/$team/$customer.list
+
+#Parsing feature/$team/$customer.list
+sort -o ${BASEDIR}/sort.txt ${BASEDIR}/feature/$team/$customer.list
 while IFS= read -r line
 do
 	 FEATURE+=($line)
@@ -196,8 +201,8 @@ done < ${BASEDIR}/sort.txt
 
 
 #------------
-#|          |
-#-----------
+#|    |     |
+#-    |-----|
 #|    |     |
 #------------
 
@@ -211,14 +216,14 @@ VAR=$(dialog \
 	--stderr \
 	--stdout \
 	--title "$TITLE" \
-	--begin 0 0 \
+	--begin 0 $((SCREEN_WIDTH/2)) \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window  --nocancel  \
+	--and-widget --begin 0 0 --keep-window  --nocancel  \
 	--menu "$MENU_FEATURE" \
-	$HEIGHT $WIDTH $CHOICE_HEIGHT \
+	$((SCREEN_HEIGHT)) $WIDTH $((SCREEN_HEIGHT-4)) \
 	"${FEATURE[@]}" \
 	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) --keep-window --nocancel \
-	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) BugID_)
+	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) \#)
 #add $VAR to TAG()
 TAG+=($VAR)
 
