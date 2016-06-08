@@ -165,23 +165,23 @@ VAR=$(dialog \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --nocancel --default-item Hipad \
-	--menu "$MENU_CUSTOMER" \
-	$HEIGHT $WIDTH $CHOICE_HEIGHT \
-	"${CUSTOMER[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window --nocancel \
 	--menu "$MENU_TEAM" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
-	"${TEAM[@]}")
+	"${TEAM[@]}" \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window  --nocancel --default-item Hipad \
+	--menu "$MENU_CUSTOMER" \
+	$HEIGHT $WIDTH $CHOICE_HEIGHT \
+	"${CUSTOMER[@]}")
 #add $VAR to TAG()
 TAG+=($VAR)
 
 echo "TAG1 = ${TAG[@]}"
 
-customer=$(echo ${TAG[1]} | tr '[:upper:]' '[:lower:]')
+customer=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
 echo "customer = $customer"
 
-team=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
+team=$(echo ${TAG[1]} | tr '[:upper:]' '[:lower:]')
 echo "team = $team"
 
 #check the feature/$team/$customer.list if exist or not
@@ -238,7 +238,10 @@ for ((i=0; i<${#array[@]}; i++ ));
 do
 	if [ "${TAG[$i]}" != "" ];
 	then
-		sed -i -e "s/${array[$i]}/${TAG[$i]}/g" ${BASEDIR}/output.txt
+		#replace all
+		#sed -i -e "s/${array[$i]}/${TAG[$i]}/g" ${BASEDIR}/output.txt
+		#repalce first match occurrence     ex:  sed '0,/bash/s//sed/' text
+		sed -i -e "0,/${array[$i]}/s//${TAG[$i]}/" ${BASEDIR}/output.txt
 	else
 		:
 	fi
