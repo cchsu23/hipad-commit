@@ -4,6 +4,8 @@ BASEDIR=$(dirname $0)
 
 git config --global commit.template ${BASEDIR}/.gittemplate
 
+
+trap "echo clean temp files;rm ${BASEDIR}/sort.txt;rm ${BASEDIR}/output.txt;exit 1" SIGTERM SIGINT SIGHUP
 #=============================================================================#
 # 1.cp .git/COMMIT_EDITMSG to temp file "output.txt"
 cp -p $PWD/.git/COMMIT_EDITMSG ${BASEDIR}/output.txt
@@ -159,7 +161,7 @@ VAR=$(dialog \
 	--title "$TITLE" \
 	--begin 0 0 \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --default-item Common --nocancel \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
@@ -180,11 +182,11 @@ echo "TAG1 = ${TAG[@]}"
 team=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
 echo "team = $team"
 
-#check the feature_$team.list if exist or not
-( [ -e ${BASEDIR}/"feature_$team".list ] || touch ${BASEDIR}/"feature_$team".list ) && echo "Feature_${TAG[2]}" > ${BASEDIR}/"feature_$team".list
+#check the feature/$team.list if exist or not
+( [ -e ${BASEDIR}/feature/$team.list ] || touch ${BASEDIR}/feature/$team.list ) && echo "Feature_${TAG[2]}" > ${BASEDIR}/feature/$team.list
 
-#Parsing feature_team.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/"feature_$team".list
+#Parsing feature/$team.list
+sort -o ${BASEDIR}/sort.txt ${BASEDIR}/feature/$team.list
 while IFS= read -r line
 do
 	 FEATURE+=($line)
