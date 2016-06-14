@@ -5,7 +5,7 @@ BASEDIR=$(dirname $0)
 git config --global commit.template ${BASEDIR}/.gittemplate
 
 
-trap "echo clean temp files;rm ${BASEDIR}/sort.txt;rm ${BASEDIR}/output.txt;exit 1" SIGTERM SIGINT SIGHUP
+trap "echo clean temp files;rm ${BASEDIR}/feature1.list;rm ${BASEDIR}/output.txt;exit 1" SIGTERM SIGINT SIGHUP
 #=============================================================================#
 # 1.cp .git/COMMIT_EDITMSG to temp file "output.txt"
 cp -p $PWD/.git/COMMIT_EDITMSG ${BASEDIR}/output.txt
@@ -94,14 +94,15 @@ fi
 #=============================================================================#
 # 5.Get TAG from file list
 PROJECT=()
-TEAM=()
+CUTOMER=()
+CATEGORY=()
 FEATURE=()
 TAG=()
 
 TITLE="Hipad Commit"
 MENU_PROJECT="PROJECT"
 MENU_CUSTOMER="CUSTOMER"
-MENU_TEAM="TEAM"
+MENU_CATEGORY="CATEGORY"
 MENU_FEATURE="FEATURE"
 
 #Get Screen Size
@@ -123,34 +124,40 @@ HEIGHT=$((SCREEN_HEIGHT/2))
 WIDTH=$((SCREEN_WIDTH/3))
 CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
-#Parsing project.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/project.list
-while IFS= read -r line
-do
-	 PROJECT+=($line)
-	 #--no-items Version: 1.1-20111020 does not support
-	 PROJECT+=($line)
-done < ${BASEDIR}/sort.txt
+#a.get google doc project sheet, and delete duplicated items, and space line . And then sorting 
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/project.list
 
-#Parsing team.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/team.list
+#Parsing project.list
 while IFS= read -r line
 do
-	 TEAM+=($line)
+	 PROJECT+=($line)
 	 #--no-items Version: 1.1-20111020 does not support
-	 TEAM+=($line)
-done < ${BASEDIR}/sort.txt
+	 PROJECT+=($line)
+done < ${BASEDIR}/project.list
+
+
+
+#b.get google doc customer sheet, and delete duplicated items, and space line . And then sorting 
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/customer.list
 
 #Parsing customer.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/customer.list
 while IFS= read -r line
 do
 	 CUSTOMER+=($line)
 	 #--no-items Version: 1.1-20111020 does not support
 	 CUSTOMER+=($line)
-done < ${BASEDIR}/sort.txt
+done < ${BASEDIR}/customer.list
 
+#c.get google doc category sheet, and delete duplicated items, and space line . And then sorting 
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/category.list
 
+#Parsing category.list
+while IFS= read -r line
+do
+	 CATEGORY+=($line)
+	 #--no-items Version: 1.1-20111020 does not support
+	 CATEGORY+=($line)
+done < ${BASEDIR}/category.list
 
 
 #Create Dialog by file list
@@ -166,43 +173,48 @@ VAR=$(dialog \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
 	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window --nocancel \
-	--menu "$MENU_TEAM" \
-	$HEIGHT $WIDTH $CHOICE_HEIGHT \
-	"${TEAM[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window  --nocancel --default-item Hipad \
 	--menu "$MENU_CUSTOMER" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
-	"${CUSTOMER[@]}")
+	"${CUSTOMER[@]}" \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window  --nocancel --default-item Hipad \
+	--menu "$MENU_CATEGORY" \
+	$HEIGHT $WIDTH $CHOICE_HEIGHT \
+	"${CATEGORY[@]}")
 #add $VAR to TAG()
 TAG+=($VAR)
 
 echo "TAG1 = ${TAG[@]}"
 
-customer=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
-echo "customer = $customer"
 
-team=$(echo ${TAG[1]} | tr '[:upper:]' '[:lower:]')
-echo "team = $team"
+#customer=$(echo ${TAG[1]} | tr '[:upper:]' '[:lower:]')
+#echo "customer = $customer"
+
+#category=$(echo ${TAG[2]} | tr '[:upper:]' '[:lower:]')
+#echo "category = $category"
 
 #check the feature/$team/$customer.list if exist or not
-mkdir -p ${BASEDIR}/feature/$team
+#mkdir -p ${BASEDIR}/feature/$team
+#( [ ! -f ${BASEDIR}/feature/$team/$customer.list ]) && echo "Feature_${TAG[2]}" > ${BASEDIR}/feature/$team/$customer.list
 
 
-( [ ! -f ${BASEDIR}/feature/$team/$customer.list ]) && echo "Feature_${TAG[2]}" > ${BASEDIR}/feature/$team/$customer.list
+#d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting 
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/feature.list
 
-#Parsing feature/$team/$customer.list
-sort -o ${BASEDIR}/sort.txt ${BASEDIR}/feature/$team/$customer.list
+#Parsing feature.list
+cat ${BASEDIR}/feature.list | grep "${TAG[2]}" | cut -d ":" -f 2 > ${BASEDIR}/feature1.list
 while IFS= read -r line
 do
 	 FEATURE+=($line)
 	 #--no-items Version: 1.1-20111020 does not support
 	 FEATURE+=($line)
-done < ${BASEDIR}/sort.txt
+done < ${BASEDIR}/feature1.list
+rm ${BASEDIR}/feature1.list
+
 
 
 #------------
-#|    |     |
-#-    |-----|
+#|         |
+#- ---------|
 #|    |     |
 #------------
 
@@ -216,11 +228,11 @@ VAR=$(dialog \
 	--stderr \
 	--stdout \
 	--title "$TITLE" \
-	--begin 0 $((SCREEN_WIDTH/2)) \
+	--begin 0 0 \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin 0 0 --keep-window  --nocancel  \
-	--menu "$MENU_FEATURE" \
-	$((SCREEN_HEIGHT)) $WIDTH $((SCREEN_HEIGHT-4)) \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window  --nocancel  \
+	--menu "${TAG[2]}" \
+	$((SCREEN_HEIGHT/2)) $WIDTH $((SCREEN_HEIGHT-4)) \
 	"${FEATURE[@]}" \
 	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) --keep-window --nocancel \
 	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) \#)
@@ -228,7 +240,6 @@ VAR=$(dialog \
 TAG+=($VAR)
 
 clear
-rm ${BASEDIR}/sort.txt
 echo "TAG2 = ${TAG[@]}"
 #=============================================================================#
 # 6. Replace array() with TAG()
