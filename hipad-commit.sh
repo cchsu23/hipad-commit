@@ -125,7 +125,10 @@ WIDTH=$((SCREEN_WIDTH/3))
 CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
 #a.get google doc project sheet, and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/project.list
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
+
+#Convert CR+LR(Windows)  to LF (linux)
+dos2unix ${BASEDIR}/project.list
 
 #Parsing project.list
 while IFS= read -r line
@@ -138,7 +141,10 @@ done < ${BASEDIR}/project.list
 
 
 #b.get google doc customer sheet, and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/customer.list
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
+
+#Convert CR+LR(Windows)  to LF (linux)
+dos2unix ${BASEDIR}/customer.list
 
 #Parsing customer.list
 while IFS= read -r line
@@ -149,7 +155,10 @@ do
 done < ${BASEDIR}/customer.list
 
 #c.get google doc category sheet, and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/category.list
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
+
+#Convert CR+LR(Windows)  to LF (linux)
+dos2unix ${BASEDIR}/category.list
 
 #Parsing category.list
 while IFS= read -r line
@@ -172,11 +181,11 @@ VAR=$(dialog \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --default-item Hipad --nocancel \
 	--menu "$MENU_CUSTOMER" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${CUSTOMER[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window  --nocancel --default-item Hipad \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window  --nocancel \
 	--menu "$MENU_CATEGORY" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${CATEGORY[@]}")
@@ -198,7 +207,10 @@ echo "TAG1 = ${TAG[@]}"
 
 
 #d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^$/d' | sort | uniq > ${BASEDIR}/feature.list
+wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
+
+#Convert CR+LR(Windows)  to LF (linux)
+dos2unix ${BASEDIR}/feature.list
 
 #Parsing feature.list
 cat ${BASEDIR}/feature.list | grep "${TAG[2]}" | cut -d ":" -f 2 > ${BASEDIR}/feature1.list
