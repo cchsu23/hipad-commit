@@ -208,12 +208,14 @@ echo "TAG1 = ${TAG[@]}"
 
 #d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting 
 wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
+#d.get google doc feature "MergeAllFeature"  and delete duplicated items, and space line . And then sorting, loading is so slow , so disable
+#wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=594540229&single=true&output=csv" > ${BASEDIR}/feature.list
 
 #Convert CR+LR(Windows)  to LF (linux)
 dos2unix ${BASEDIR}/feature.list
 
-#Parsing feature.list
-cat ${BASEDIR}/feature.list | grep "${TAG[2]}" | cut -d ":" -f 2 > ${BASEDIR}/feature1.list
+#Parsing feature.list by google doc feature "All sheet" & "MergeAllFeature"
+cat ${BASEDIR}/feature.list | grep "${TAG[2]}" | cut -d "," -f 1 | sort | uniq > ${BASEDIR}/feature1.list
 while IFS= read -r line
 do
 	 FEATURE+=($line)
