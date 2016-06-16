@@ -177,15 +177,15 @@ VAR=$(dialog \
 	--title "$TITLE" \
 	--begin 0 0 \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --default-item --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --default-item ${array[0]} --nocancel \
 	--menu "$MENU_PROJECT" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${PROJECT[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --default-item Hipad --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window  --default-item ${array[1]} --nocancel \
 	--menu "$MENU_CUSTOMER" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${CUSTOMER[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window  --nocancel \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window --default-item ${array[2]} --nocancel \
 	--menu "$MENU_CATEGORY" \
 	$HEIGHT $WIDTH $CHOICE_HEIGHT \
 	"${CATEGORY[@]}")
@@ -244,7 +244,7 @@ VAR=$(dialog \
 	--title "$TITLE" \
 	--begin 0 0 \
 	--textbox ${BASEDIR}/output.txt $((SCREEN_HEIGHT/2)) $SCREEN_WIDTH \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window  --nocancel  \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) 0 --keep-window --default-item ${array[3]}  --nocancel  \
 	--menu "${TAG[2]}" \
 	$((SCREEN_HEIGHT/2)) $WIDTH $((SCREEN_HEIGHT-4)) \
 	"${FEATURE[@]}" \
