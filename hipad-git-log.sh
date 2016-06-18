@@ -3,13 +3,25 @@ BASEDIR=$(dirname $0)
 
 #git config --global alias.hipad-git-log '!~/.hipad-commit/hipad-git-log.sh'
 
-trap "echo clean temp files;rm ${BASEDIR}/feature1.list;rm ${BASEDIR}/temp.csv;rm ${BASEDIR}/final.csv;rm ${BASEDIR}/statistics.csv;rm ${BASEDIR}/result.txt;exit 1" SIGTERM SIGINT SIGHUP
+output_folder="output"
 
+mkdir -p ${BASEDIR}/$output_folder
+
+final_file="${BASEDIR}/$output_folder/final.csv"
+statistics_file="${BASEDIR}/$output_folder/statistics.csv"
+result_file="${BASEDIR}/$output_folder/result.txt"
+temp_file="${BASEDIR}/$output_folder/temp.csv"
+
+
+trap "echo clean temp files;rm ${BASEDIR}/feature1.list;rm $temp_file; \
+rm $final_file;rm $statistic_file;rm $result_file; \
+clear;exit 1" SIGTERM SIGINT SIGHUP
 
 
 git_config=".git/config"
 candidate_config="${PWD}/${git_config}"
 has_only_one_git=0
+
 if [ ! -e "${candidate_config}" ]
 then
 	echo "Not a valid git repository"
@@ -22,35 +34,37 @@ path=$PWD
 shift 1
 while [[ "$path" != "/" ]];
 do
-    if find "$path" -maxdepth 1 -mindepth 1 -iname ".repo" -print -quit | grep -q .
-    then
-	echo "path =$path"
-	break
-    else
-    # Note: if you want to ignore symlinks, use "$(realpath -s $path/..)"
-    	path="$(readlink -f $path/..)"
-    fi
+	if find "$path" -maxdepth 1 -mindepth 1 -iname ".repo" -print -quit | grep -q .
+	then
+		echo "path =$path"
+		break
+	else
+		# Note: if you want to ignore symlinks, use "$(realpath -s $path/..)"
+		path="$(readlink -f $path/..)"
+	fi
 done
 
 repo_prjoct_path="$path/.repo/project.list"
 if [ "$path" != "/" ]
 then
-   echo "success, found the .repo"
-   repo_project_num=$(wc -l < $repo_prjoct_path)
-   #due to found the .repo ,  clear has_only_one_git to 0
-   has_only_one_git=0
+	echo "success, found the .repo"
+	repo_project_num=$(wc -l < $repo_prjoct_path)
+	#due to found the .repo ,  clear has_only_one_git to 0
+	has_only_one_git=0
 else
-   echo "can not find any .repo folder"
-   if [ "$has_only_one_git" != "0" ]
-   then
-	   echo "has at least one .git folder"
-	   repo_project_num=1
-	   path=${PWD}
-	   repo_prjoct_path=""
-    else
-	   repo_project_num=0
-	   path=${PWD}
-	   repo_prjoct_path=""
+	
+	if [ "$has_only_one_git" != "0" ]
+	then
+		echo "has at least one .git folder"
+		repo_project_num=1
+		path=${PWD}
+		repo_prjoct_path=""
+	else
+		echo "can not find any .repo folder"
+		exit 1
+		#repo_project_num=0
+		#path=${PWD}
+		#repo_prjoct_path=""
 	fi
 fi
 
@@ -103,6 +117,8 @@ CUSTOMER=()
 CATEGORY=()
 DIALOG_CANCEL=1
 DIALOG_ESC=255
+DIALOG_EXTRA=3
+total_number=0
 
 #Get Screen Size
 size=$(dialog --stdout --print-maxsize)
@@ -117,10 +133,16 @@ HEIGHT=$((SCREEN_HEIGHT/2))
 WIDTH=$((SCREEN_WIDTH/2))
 CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
+################################################
+# for doing something in the progress dialog. 
+# if not do this, some variable can not be outputed 
+#
 git_log(){
 	#echo "$@" > ${BASEDIR}/last_cmd.csv
-	git log $@ > ${BASEDIR}/temp.csv
+	git log $@ > $temp_file
 }
+#################################################
+
 
 get_data_from_google_sheet() {
 	#a.get google doc project sheet, and delete duplicated items, and space line . And then sorting 
@@ -310,102 +332,48 @@ select_feature() {
 	TAG_FEATURE+=($VAR)
 }
 
-
-if [ "$repo_project_num" != "0" ]
-then
-	#get data form google sheet here
-	get_data_from_google_sheet
-	#==============================Filter Start==============================#
-
-
-	while true; do
-
-		exec 3>&1
-		selection=$(dialog \
-		--backtitle "Hipad Git Log" \
-		--title "Filter Menu" \
-		--clear \
-		--ok-label "Select" \
-		--cancel-label "Hipad Git log" \
-		--menu "Press ESC to exit the program\nPlease Select:\n" $HEIGHT $WIDTH $CHOICE_HEIGHT \
-		"1" "Filter by Author" \
-		"2" "Filter by Since Date" \
-		"3" "Filter by Until Date" \
-		"4" "Filter by Hipad Commit Project" \
-		"5" "Filter by Hipad Commit Customer" \
-		"6" "Filter by Hipad Commit Category" \
-		"7" "Filter by Hipad Commit Feature" \
-		2>&1 1>&3)
-		exit_status=$?
-		exec 3>&-
-
-		case $exit_status in
-		$DIALOG_CANCEL)
-		clear
-		echo "Start to git log"
-		break
-		;;
-		$DIALOG_ESC)
-		clear
-		echo "Program aborted." >&2
-		exit 1
-		;;
-		esac
-
-		case $selection in
-		0 )
-		clear
-		echo "Program terminated."
-		;;
-		1 )
-		select_author "Filter by Author"
-		;;
-		2 )
-		select_since_date "Filter by Since Date"
-		;;
-		3 )
-		select_until_date "Filter by Until Date"
-		;;
-		4 )
-		select_project "Filter by Hipad Commit Project"
-		;;
-		5 )
-		select_customer "Filter by Hipad Commit Customer"
-		;;
-		6 )
-		select_category "Filter by Hipad Commit Category"
-		;;
-		7 )
-		select_feature "Filter by Hipad Commit Feature"
-		;;
-		esac
-	
-		#do sort and uniq
-		TAG_AUTHOR=($(echo ${TAG_AUTHOR[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
-		TAG_PROJECT=($(echo ${TAG_PROJECT[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
-		TAG_CUSTOMER=($(echo ${TAG_CUSTOMER[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
-		TAG_CATEGORY=($(echo ${TAG_CATEGORY[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
-		TAG_FEATURE=($(echo ${TAG_FEATURE[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
-
-		echo "Author: ${TAG_AUTHOR[@]}" > ${BASEDIR}/result.txt
-		echo "Since Date: $TAG_SINCE_DATE" >> ${BASEDIR}/result.txt
-		echo "Until Date: $TAG_UNTIL_DATE" >> ${BASEDIR}/result.txt
-		echo "Project: ${TAG_PROJECT[@]}" >> ${BASEDIR}/result.txt
-		echo "Customer: ${TAG_CUSTOMER[@]}" >> ${BASEDIR}/result.txt
-		echo "Category: ${TAG_CATEGORY[@]}" >> ${BASEDIR}/result.txt
-		echo "Feature: ${TAG_FEATURE[@]}" >> ${BASEDIR}/result.txt
-		
-		dialog \
+input_custom_grep(){
+	VAR=$(dialog \
 		--scrollbar \
 		--stderr \
 		--stdout \
-		--title "Git Log Parameter" \
-		--textbox ${BASEDIR}/result.txt $HEIGHT $WIDTH
+		--title "$1" \
+		--inputbox "Custom String, delimited by space:" $HEIGHT $WIDTH "test1 test2 test3")
+
+	for word in $VAR
+	do
+		TAG_CUSTOM_STRING+=($word)
 	done
+}
 
+print_and_show() {
+	#do sort and uniq
+	TAG_AUTHOR=($(echo ${TAG_AUTHOR[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
+	TAG_PROJECT=($(echo ${TAG_PROJECT[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
+	TAG_CUSTOMER=($(echo ${TAG_CUSTOMER[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
+	TAG_CATEGORY=($(echo ${TAG_CATEGORY[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
+	TAG_FEATURE=($(echo ${TAG_FEATURE[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
+	TAG_CUSTOM_STRING=($(echo ${TAG_CUSTOM_STRING[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
+	echo "============================Filter========================" > $result_file
+	echo "Author: ${TAG_AUTHOR[@]}" >> $result_file
+	echo "Since Date: $TAG_SINCE_DATE" >> $result_file
+	echo "Until Date: $TAG_UNTIL_DATE" >> $result_file
+	echo "Project: ${TAG_PROJECT[@]}" >> $result_file
+	echo "Customer: ${TAG_CUSTOMER[@]}" >> $result_file
+	echo "Category: ${TAG_CATEGORY[@]}" >> $result_file
+	echo "Feature: ${TAG_FEATURE[@]}" >> $result_file
+	echo "Custom String: ${TAG_CUSTOM_STRING[@]}" >> $result_file
+	echo "==========================================================" >> $result_file
 
+	dialog \
+	--scrollbar \
+	--stderr \
+	--stdout \
+	--title "Git Log Parameter" \
+	--textbox $result_file $HEIGHT $WIDTH
+}
 
-
+put_tag_into_parameter() {
 	#======================Put Tags into parameter==================
 	parameter+=$(echo "--pretty=format:"%h,%ae,%ad,%s" ")
 	#parameter+=$(echo "--author @hipad.com ")
@@ -472,14 +440,115 @@ then
 		fi
 	done
 
-	echo "Cmdline: ${parameter[@]}" >> ${BASEDIR}/result.txt
+	for ((i=0; i<${#TAG_CUSTOM_STRING[@]}; i++ ));
+	do
+		if [ "${TAG_CUSTOM_STRING[$i]}" != "" ];
+		then
+			parameter+=$(echo "--grep=${TAG_CUSTOM_STRING[$i]} ")
+		else
+			:
+		fi
+	done
+
+	echo "Cmdline: ${parameter[@]}" >> $result_file
+}
+
+if [ "$repo_project_num" != "0" ]
+then
+	#get data form google sheet here
+	get_data_from_google_sheet
+	#==============================Filter Start==============================#
+
+
+	while true; do
+
+		exec 3>&1
+		selection=$(dialog \
+		--backtitle "Hipad Git Log" \
+		--title "Filter Menu" \
+		--clear \
+		--ok-label "Select" \
+		--cancel-label "Repo forall -c git log" \
+		--extra-button \
+		--extra-label "Git log" \
+		--menu "Press ESC to exit the program\nPlease Select:\n" $HEIGHT $WIDTH $CHOICE_HEIGHT \
+		"1" "Filter by Author" \
+		"2" "Filter by Since Date" \
+		"3" "Filter by Until Date" \
+		"4" "Filter by Hipad Commit Project" \
+		"5" "Filter by Hipad Commit Customer" \
+		"6" "Filter by Hipad Commit Category" \
+		"7" "Filter by Hipad Commit Feature" \
+		"8" "Filter by Input Custom String" \
+		2>&1 1>&3)
+		exit_status=$?
+		exec 3>&-
+
+		case $exit_status in
+		$DIALOG_CANCEL)
+		clear
+		echo "Start to git log on total .repo"
+		break
+		;;
+		$DIALOG_EXTRA)
+		clear
+		echo "Start to git log just on local one git"
+		has_only_one_git=1
+		repo_project_num=1
+		print_and_show
+		break
+		;;
+		$DIALOG_ESC)
+		clear
+		echo "Program aborted." >&2
+		exit 1
+		;;
+		esac
+
+		case $selection in
+		0 )
+		clear
+		echo "Program terminated."
+		;;
+		1 )
+		select_author "Filter by Author"
+		;;
+		2 )
+		select_since_date "Filter by Since Date"
+		;;
+		3 )
+		select_until_date "Filter by Until Date"
+		;;
+		4 )
+		select_project "Filter by Hipad Commit Project"
+		;;
+		5 )
+		select_customer "Filter by Hipad Commit Customer"
+		;;
+		6 )
+		select_category "Filter by Hipad Commit Category"
+		;;
+		7 )
+		select_feature "Filter by Hipad Commit Feature"
+		;;
+		8 )
+		input_custom_grep "Filter by Input Custom String"
+		;;
+		esac
+	
+		print_and_show
+	done
+
+
+
+
+	put_tag_into_parameter
 	
 	SECONDS=0
 	#==============================Progress Start==============================#
 	dialog --title "Total Projct $repo_project_num" --gauge "Search each git repository..." 10 100 < <(
-	rm ${BASEDIR}/final.csv &> /dev/null
-	rm ${BASEDIR}/statistics.csv &> /dev/null
-	#rm ${BASEDIR}/path.csv &> /dev/null
+	rm $final_file &> /dev/null
+	rm $statistics_file &> /dev/null
 	for (( i=1; i<=$repo_project_num; i++ ))
 	do
 		if [ "$has_only_one_git" != "0" ]
@@ -488,41 +557,39 @@ then
 		else	
 			file=$(sed -n "${i},${i}p" $repo_prjoct_path)
 			cd "$path/$file"
-			#echo "$i,$PWD" >> ${BASEDIR}/path.csv
 		fi
 		
 		#=================Git log===================#
 		git_log "${parameter[@]}"
 
 		#add newline to the file
-		sed -i -e '$a\' ${BASEDIR}/temp.csv
+		sed -i -e '$a\' $temp_file
 
 		#count the file size
-		actualsize=$(wc -c <${BASEDIR}/temp.csv)
+		actualsize=$(wc -c <$temp_file)
 		echo "git log done! file size=$actualsize"
 
 		#replace  '['  with ' ' 
-		sed -i -e 's/\[/\ /g' ${BASEDIR}/temp.csv
+		sed -i -e 's/\[/\ /g' $temp_file
 
 		#replace  ']'  with ','
-		sed -i -e 's/]/,/g' ${BASEDIR}/temp.csv
+		sed -i -e 's/]/,/g' $temp_file
 
 		proj=$file
 		proj+=","
 		#add proj each line , ${proj} have the path '/', so use '#' to instead of
-		sed -i -e "s#^#${proj}#" ${BASEDIR}/temp.csv
+		sed -i -e "s#^#${proj}#" $temp_file
 
 		#and then append to final.csv
-		cat ${BASEDIR}/temp.csv  >> ${BASEDIR}/final.csv
+		cat $temp_file  >> $final_file
 		
 		#counting
-		count=$(wc -l < ${BASEDIR}/temp.csv )
-		echo "$i,$proj,$count" >> ${BASEDIR}/statistics.csv
-
+		count=$(wc -l < $temp_file)
+		echo "$i,$proj,$count" >> $statistics_file
+		total=$((total+ count))
 		
-
 		#remove temp file
-		rm ${BASEDIR}/temp.csv
+		rm $temp_file
 
 		
 		percentage=$((100*(i)/$repo_project_num))
@@ -530,7 +597,9 @@ then
 cat <<EOF
 XXX
 $percentage
-$i Search each git repository $path/$file
+Searching [$i th] git repository $path/$file   
+Elasped $SECONDS seconds
+Found $total commit
 XXX
 EOF
 
@@ -538,29 +607,26 @@ EOF
 	)
 fi #end of if [ "$repo_project_num" != "0" ]
 
-echo "Final Result CVS file: ${BASEDIR}/final.csv" >> ${BASEDIR}/result.txt
-echo "Statistics CVS file: ${BASEDIR}/statistics.csv" >> ${BASEDIR}/result.txt
-echo "This File: ${BASEDIR}/result.txt" >> ${BASEDIR}/result.txt
-echo "Elapsed time: $SECONDS seconds" >> ${BASEDIR}/result.txt
+#add newline to the file
+sed -i -e '$a\' $statistics_file &> /dev/null
+#add newline to the file
+sed -i -e '$a\' $final_file &> /dev/null
+
+total_number=$(wc -l < $final_file) &> /dev/null
+#count the file size
+#actualsize=$(wc -c <$final_file) &> /dev/null
+#echo "final.csv=$actualsize ,Elapsed time: $SECONDS seconds"
+
+echo "Final Result CVS file: $final_file" >> $result_file
+echo "Statistics CVS file: $statistics_file" >> $result_file
+echo "This File: $result_file" >> $result_file
+echo "Elapsed Time: $SECONDS seconds" >> $result_file
+echo "Total Commit: $total_number" >> $result_file
 
 dialog \
 --scrollbar \
 --stderr \
 --stdout \
 --title "Result" \
---textbox ${BASEDIR}/result.txt $HEIGHT $WIDTH
-		
-#add newline to the file
-sed -i -e '$a\' ${BASEDIR}/statistics.csv &> /dev/null
-#add newline to the file
-sed -i -e '$a\' ${BASEDIR}/final.csv &> /dev/null
-
-#count the file size
-actualsize=$(wc -c <${BASEDIR}/final.csv) &> /dev/null
-echo "final.csv=$actualsize"
-
-
-
-
-
+--textbox $result_file $((SCREEN_HEIGHT/2+4)) $((SCREEN_WIDTH))
 
