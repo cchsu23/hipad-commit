@@ -93,6 +93,10 @@ fi
 
 #=============================================================================#
 # 5.Get TAG from file list
+DIALOG_YES=0
+DIALOG_NO=1
+DIALOG_ESC=255
+
 PROJECT=()
 CUTOMER=()
 CATEGORY=()
@@ -114,6 +118,33 @@ SCREEN_HEIGHT=$(cut -d " " -f 2 <<< $size | cut -d "," -f 1 )
 let "SCREEN_HEIGHT += 0"
 echo $SCREEN_HEIGHT
 
+use_local_list=1
+dialog \
+	--scrollbar \
+	--stderr \
+	--stdout \
+	--title "$TITLE" \
+	--defaultno \
+	--yesno  "Sync from google sheet?" 0 0
+
+exit_status=$?
+	case $exit_status in
+	$DIALOG_YES)
+	clear
+	echo "Yes"
+	use_local_list=0
+	;;
+	$DIALOG_NO)
+	clear
+	echo "No"
+	use_local_list=1
+	;;
+	$DIALOG_ESC)
+	clear
+	echo "Program aborted." >&2
+	exit 1
+	;;
+	esac
 
 #------------
 #|          |
@@ -124,11 +155,15 @@ HEIGHT=$((SCREEN_HEIGHT/2))
 WIDTH=$((SCREEN_WIDTH/3))
 CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
-#a.get google doc project sheet, and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
+if [ "$use_local_list" == "0" ]
+then
 
-#Convert CR+LR(Windows)  to LF (linux)
-dos2unix ${BASEDIR}/project.list
+	#a.get google doc project sheet, and delete duplicated items, and space line . And then sorting
+	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
+
+	#Convert CR+LR(Windows)  to LF (linux)
+	dos2unix ${BASEDIR}/project.list
+fi
 
 #Parsing project.list
 while IFS= read -r line
@@ -139,12 +174,14 @@ do
 done < ${BASEDIR}/project.list
 
 
+if [ "$use_local_list" == "0" ]
+then
+	#b.get google doc customer sheet, and delete duplicated items, and space line . And then sorting
+	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
 
-#b.get google doc customer sheet, and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
-
-#Convert CR+LR(Windows)  to LF (linux)
-dos2unix ${BASEDIR}/customer.list
+	#Convert CR+LR(Windows)  to LF (linux)
+	dos2unix ${BASEDIR}/customer.list
+fi
 
 #Parsing customer.list
 while IFS= read -r line
@@ -154,11 +191,14 @@ do
 	 CUSTOMER+=($line)
 done < ${BASEDIR}/customer.list
 
-#c.get google doc category sheet, and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
+if [ "$use_local_list" == "0" ]
+then
+	#c.get google doc category sheet, and delete duplicated items, and space line . And then sorting
+	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
 
-#Convert CR+LR(Windows)  to LF (linux)
-dos2unix ${BASEDIR}/category.list
+	#Convert CR+LR(Windows)  to LF (linux)
+	dos2unix ${BASEDIR}/category.list
+fi
 
 #Parsing category.list
 while IFS= read -r line
@@ -205,14 +245,16 @@ echo "TAG1 = ${TAG[@]}"
 #mkdir -p ${BASEDIR}/feature/$team
 #( [ ! -f ${BASEDIR}/feature/$team/$customer.list ]) && echo "Feature_${TAG[2]}" > ${BASEDIR}/feature/$team/$customer.list
 
+if [ "$use_local_list" == "0" ]
+then
+	#d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting
+	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
+	#d.get google doc feature "MergeAllFeature"  and delete duplicated items, and space line . And then sorting, loading is so slow , so disable
+	#wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=594540229&single=true&output=csv" > ${BASEDIR}/feature.list
 
-#d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting 
-wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
-#d.get google doc feature "MergeAllFeature"  and delete duplicated items, and space line . And then sorting, loading is so slow , so disable
-#wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=594540229&single=true&output=csv" > ${BASEDIR}/feature.list
-
-#Convert CR+LR(Windows)  to LF (linux)
-dos2unix ${BASEDIR}/feature.list
+	#Convert CR+LR(Windows)  to LF (linux)
+	dos2unix ${BASEDIR}/feature.list
+fi
 
 #Parsing feature.list by google doc feature "All sheet" & "MergeAllFeature"
 cat ${BASEDIR}/feature.list | grep "${TAG[2]}" | cut -d "," -f 1 | sort | uniq > ${BASEDIR}/feature1.list
