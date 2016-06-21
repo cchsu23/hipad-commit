@@ -115,6 +115,8 @@ parameter=()
 PROJECT=()
 CUSTOMER=()
 CATEGORY=()
+DIALOG_YES=0
+DIALOG_NO=1
 DIALOG_CANCEL=1
 DIALOG_ESC=255
 DIALOG_EXTRA=3
@@ -145,12 +147,14 @@ git_log(){
 
 
 get_data_from_google_sheet() {
+if [ "$use_local_list" == "0" ]
+then
 	#a.get google doc project sheet, and delete duplicated items, and space line . And then sorting 
 	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/project.list
-
+fi
 	#Parsing project.list
 	while IFS= read -r line
 	do
@@ -161,12 +165,14 @@ get_data_from_google_sheet() {
 		 PROJECT+=("off")
 	done < ${BASEDIR}/project.list
 
+if [ "$use_local_list" == "0" ]
+then
 	#b.get google doc customer sheet, and delete duplicated items, and space line . And then sorting 
 	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/customer.list
-
+fi
 	#Parsing customer.list
 	while IFS= read -r line
 	do
@@ -177,13 +183,14 @@ get_data_from_google_sheet() {
 		 CUSTOMER+=("off")
 	done < ${BASEDIR}/customer.list
 
-
+if [ "$use_local_list" == "0" ]
+then
 	#c.get google doc category sheet, and delete duplicated items, and space line . And then sorting 
 	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/category.list
-
+fi
 	#Parsing category.list
 	while IFS= read -r line
 	do
@@ -196,12 +203,14 @@ get_data_from_google_sheet() {
 		 CATEGORY_MENU+=($line)
 	done < ${BASEDIR}/category.list
 
-
+if [ "$use_local_list" == "0" ]
+then
 	#d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting 
 	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/feature.list
+fi
 
 }
 
@@ -455,12 +464,45 @@ put_tag_into_parameter() {
 
 if [ "$repo_project_num" != "0" ]
 then
+
+	#sync or not
+	use_local_list=1
+	dialog \
+	--scrollbar \
+	--stderr \
+	--stdout \
+	--title "$TITLE" \
+	--defaultno \
+	--yesno  "Sync from google sheet?" 0 0
+
+	exit_status=$?
+	case $exit_status in
+	$DIALOG_YES)
+	clear
+	echo "Yes"
+	use_local_list=0
+	;;
+	$DIALOG_NO)
+	clear
+	echo "No"
+	use_local_list=1
+	;;
+	$DIALOG_ESC)
+	clear
+	echo "Program aborted." >&2
+	exit 1
+	;;
+	esac
 	#get data form google sheet here
 	get_data_from_google_sheet
 	#==============================Filter Start==============================#
 
 
 	while true; do
+
+
+
+
 
 		exec 3>&1
 		selection=$(dialog \
