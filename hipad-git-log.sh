@@ -106,7 +106,7 @@ echo "Root path=$path .repo project path =$repo_prjoct_path  total project=$repo
 # --since, --after	Limit the commits to those made after the specified date.
 # --until, --before	Limit the commits to those made before the specified date.
 # --author		Only show commits in which the author entry matches the specified string.
-# --committer		Only show commits in which the committer entry matches the specified string.
+#--committer            Only show commits in which the committer entry matches the specified string.
 # --grep		Only show commits with a commit message containing the string
 # -S			Only show commits adding or removing code matching the string
 # --no-merge
@@ -364,7 +364,7 @@ print_and_show() {
 	TAG_FEATURE=($(echo ${TAG_FEATURE[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
 	TAG_CUSTOM_STRING=($(echo ${TAG_CUSTOM_STRING[@]} | tr [:space:] '\n' | awk '!a[$0]++'))
 	echo "============================Filter========================" > $result_file
-	echo "Author: ${TAG_AUTHOR[@]}" >> $result_file
+	echo "Committer: ${TAG_AUTHOR[@]}" >> $result_file
 	echo "Since Date: $TAG_SINCE_DATE" >> $result_file
 	echo "Until Date: $TAG_UNTIL_DATE" >> $result_file
 	echo "Project: ${TAG_PROJECT[@]}" >> $result_file
@@ -384,16 +384,16 @@ print_and_show() {
 
 put_tag_into_parameter() {
 	#======================Put Tags into parameter==================
-	parameter+=$(echo "--pretty=format:"%h,%ae,%ad,%s" ")
+	parameter+=$(echo "--pretty=format:"%h,%cn,%ae,%ad,%s" ")
 	parameter+=$(echo "--no-merges ")
-	#parameter+=$(echo "--author @hipad.com ")
+	#parameter+=$(echo "--committer @hipad.com ")
 	#parameter+=$(echo "--grep Common ")
 
 	for ((i=0; i<${#TAG_AUTHOR[@]}; i++ ));
 	do
 		if [ "${TAG_AUTHOR[$i]}" != "" ];
 		then
-			parameter+=$(echo "--author=${TAG_AUTHOR[$i]} ")
+			parameter+=$(echo "--committer=${TAG_AUTHOR[$i]} ")
 		else
 			:
 		fi
@@ -515,7 +515,7 @@ then
 		--extra-button \
 		--extra-label "Git log" \
 		--menu "Press ESC to exit the program\nPlease Select:\n" $HEIGHT $WIDTH $CHOICE_HEIGHT \
-		"1" "Filter by Author" \
+		"1" "Filter by Committer" \
 		"2" "Filter by Since Date" \
 		"3" "Filter by Until Date" \
 		"4" "Filter by Hipad Commit Project" \
@@ -554,7 +554,7 @@ then
 		echo "Program terminated."
 		;;
 		1 )
-		select_author "Filter by Author"
+		select_author "Filter by Committer"
 		;;
 		2 )
 		select_since_date "Filter by Since Date"
