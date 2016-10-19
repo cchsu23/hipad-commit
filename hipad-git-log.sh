@@ -385,6 +385,7 @@ print_and_show() {
 put_tag_into_parameter() {
 	#======================Put Tags into parameter==================
 	parameter+=$(echo "--pretty=format:"%h,%ae,%ad,%s" ")
+	parameter+=$(echo "--no-merges ")
 	#parameter+=$(echo "--author @hipad.com ")
 	#parameter+=$(echo "--grep Common ")
 
