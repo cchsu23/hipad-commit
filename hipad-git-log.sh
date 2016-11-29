@@ -4,7 +4,7 @@ BASEDIR=$(dirname $0)
 #git config --global alias.hipad-git-log '!~/.hipad-commit/hipad-git-log.sh'
 
 output_folder="output"
-
+rm -rf ${BASEDIR}/$output_folder
 mkdir -p ${BASEDIR}/$output_folder
 
 final_file="${BASEDIR}/$output_folder/final.csv"
@@ -496,6 +496,35 @@ then
 	esac
 	#get data form google sheet here
 	get_data_from_google_sheet
+
+	#git format-patch or not
+	git_format_patch=0
+	dialog \
+	--scrollbar \
+	--stderr \
+	--stdout \
+	--title "$TITLE" \
+	--defaultno \
+	--yesno  "Git Format-Patch with All searched patch?" 0 0
+
+	exit_status=$?
+	case $exit_status in
+	$DIALOG_YES)
+	clear
+	echo "Yes"
+	git_format_patch=1
+	;;
+	$DIALOG_NO)
+	clear
+	echo "No"
+	git_format_patch=0
+	;;
+	$DIALOG_ESC)
+	clear
+	echo "Program aborted." >&2
+	exit 1
+	;;
+	esac
 	#==============================Filter Start==============================#
 
 
@@ -630,7 +659,22 @@ then
 		count=$(wc -l < $temp_file)
 		echo "$i,$proj,$count" >> $statistics_file
 		total=$((total+ count))
+
+		# Do git format-patch
+		if [ "$git_format_patch" == "1" ]
+		then
+			for (( j=1; j <= $count; j++ ))
+			do
+				if [ "$j" == "1" ]
+				then
+					mkdir -p ${BASEDIR}/$output_folder/$file
+				fi
+				commit_id=$(sed -n "$j"p $temp_file | cut -d "," -f 2);
+				git format-patch $commit_id -1 -o ${BASEDIR}/$output_folder/$file
 		
+			done
+		fi
+
 		#remove temp file
 		rm $temp_file
 
