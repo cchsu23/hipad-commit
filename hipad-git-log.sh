@@ -671,7 +671,7 @@ then
 				fi
 				commit_id=$(sed -n "$j"p $temp_file | cut -d "," -f 2);
 				git format-patch $commit_id -1 -o ${BASEDIR}/$output_folder/$file
-		
+		                find ${BASEDIR}/$output_folder/$file -name '*.patch' -exec bash -c 'mv "$0" "${0/0001/'"${commit_id}"'}"' {} \; 2>/dev/null 
 			done
 		fi
 

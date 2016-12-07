@@ -91,6 +91,7 @@ Light,Sensors
 Log,Utility
 LXC,System
 Magneto,Sensors
+MCFG,Connectivity
 MCFG_MBN,Connectivity
 MediaProvider,Multimedia
 MediaProvider_Ringtone,Multimedia
