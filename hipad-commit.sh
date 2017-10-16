@@ -119,13 +119,14 @@ let "SCREEN_HEIGHT += 0"
 echo $SCREEN_HEIGHT
 
 use_local_list=1
+use_ip_contry=CN
 dialog \
 	--scrollbar \
 	--stderr \
 	--stdout \
 	--title "$TITLE" \
 	--defaultno \
-	--yesno  "Sync from google sheet?" 0 0
+	--yesno  "Sync from google/yiqixie?" 0 0
 
 exit_status=$?
 	case $exit_status in
@@ -157,12 +158,29 @@ CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
 if [ "$use_local_list" == "0" ]
 then
+	#get ip network country to decide use Google/yiqixie online doc
+	use_ip_contry=$(curl 'ipinfo.io/country');
+	#force to CN (for testing)
+	#use_ip_contry=CN
+	echo "$use_ip_contry"
 
+	if [ "$use_ip_contry" == "TW" ]
+	then
 	#a.get google doc project sheet, and delete duplicated items, and space line . And then sorting
-	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
+		wget --no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1338346914&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/project.list
+	else #CN use yiqixie
+		#a.get yiqixie sheet (Just Do Once), and delete duplicated items, and space line . And then sorting 
+		wget --no-check-certificate -q -O ${BASEDIR}/yiqixie.xlsx - "https://yiqixie.com/s/export/fcAB2o1EdPAWp8YnYvqTcfECp?format=xlsx";ssconvert -S ${BASEDIR}/yiqixie.xlsx ${BASEDIR}/yiqixie.csv
+		#a.yiqixie.csv.0 = sheet1 (project)
+		cat ${BASEDIR}/yiqixie.csv.0 | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/project.list
+
+		#Convert CR+LR(Windows)  to LF (linux)
+		dos2unix ${BASEDIR}/project.list
+	
+	fi
 fi
 
 #Parsing project.list
@@ -176,11 +194,19 @@ done < ${BASEDIR}/project.list
 
 if [ "$use_local_list" == "0" ]
 then
+	if [ "$use_ip_contry" == "TW" ]
+	then
 	#b.get google doc customer sheet, and delete duplicated items, and space line . And then sorting
-	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
+		wget --no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1991161436&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/customer.list
+	else #CN use yiqixie
+		#b.yiqixie.csv.1 = sheet2 (customer)
+		cat ${BASEDIR}/yiqixie.csv.1 | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/customer.list
+		#Convert CR+LR(Windows)  to LF (linux)
+		dos2unix ${BASEDIR}/customer.list
+	fi
 fi
 
 #Parsing customer.list
@@ -193,11 +219,19 @@ done < ${BASEDIR}/customer.list
 
 if [ "$use_local_list" == "0" ]
 then
+	if [ "$use_ip_contry" == "TW" ]
+	then
 	#c.get google doc category sheet, and delete duplicated items, and space line . And then sorting
-	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
+		wget --no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=1678041552&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/category.list
+	else #CN use yiqixie
+		#b.yiqixie.csv.2 = sheet3 (category)
+		cat ${BASEDIR}/yiqixie.csv.2 | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/category.list
+		#Convert CR+LR(Windows)  to LF (linux)
+		dos2unix ${BASEDIR}/category.list
+	fi
 fi
 
 #Parsing category.list
@@ -247,13 +281,23 @@ echo "TAG1 = ${TAG[@]}"
 
 if [ "$use_local_list" == "0" ]
 then
+	if [ "$use_ip_contry" == "TW" ]
+	then
 	#d.get google doc feature "All sheet"  and delete duplicated items, and space line . And then sorting
-	wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
+		wget --no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=333944621&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
 	#d.get google doc feature "MergeAllFeature"  and delete duplicated items, and space line . And then sorting, loading is so slow , so disable
-	#wget –no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=594540229&single=true&output=csv" > ${BASEDIR}/feature.list
+		#wget --no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=594540229&single=true&output=csv" > ${BASEDIR}/feature.list
 
 	#Convert CR+LR(Windows)  to LF (linux)
 	dos2unix ${BASEDIR}/feature.list
+	else #CN use yiqixie
+		#b.yiqixie.csv.3 = sheet4 (All)
+		cat ${BASEDIR}/yiqixie.csv.3 | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
+		#Convert CR+LR(Windows)  to LF (linux)
+		dos2unix ${BASEDIR}/feature.list
+		
+		rm ${BASEDIR}/yiqixie.*
+	fi
 fi
 
 #Parsing feature.list by google doc feature "All sheet" & "MergeAllFeature"
