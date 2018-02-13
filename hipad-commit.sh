@@ -101,6 +101,7 @@ PROJECT=()
 CUTOMER=()
 CATEGORY=()
 FEATURE=()
+REDMINE=()
 TAG=()
 
 TITLE="Hipad Commit"
@@ -108,6 +109,7 @@ MENU_PROJECT="PROJECT"
 MENU_CUSTOMER="CUSTOMER"
 MENU_CATEGORY="CATEGORY"
 MENU_FEATURE="FEATURE"
+MENU_REDMINE="REDMINE"
 
 #Get Screen Size
 size=$(dialog --stdout --print-maxsize)
@@ -295,8 +297,6 @@ then
 		cat ${BASEDIR}/yiqixie.csv.3 | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/feature.list
 		#Convert CR+LR(Windows)  to LF (linux)
 		dos2unix ${BASEDIR}/feature.list
-		
-		rm ${BASEDIR}/yiqixie.*
 	fi
 fi
 
@@ -311,15 +311,48 @@ done < ${BASEDIR}/feature1.list
 rm ${BASEDIR}/feature1.list
 
 
+if [ "$use_local_list" == "0" ]
+then
+	#get ip network country to decide use Google/yiqixie online doc
+	use_ip_contry=$(curl 'ipinfo.io/country');
+	#force to CN (for testing)
+	#use_ip_contry=CN
+	echo "$use_ip_contry"
+
+	if [ "$use_ip_contry" == "TW" ]
+	then
+	#a.get google doc redmine sheet, and delete duplicated items, and space line . And then sorting
+		wget --no-check-certificate -q -O - "https://docs.google.com/spreadsheets/d/1oR1KIbzTh5waDZN2HgOsBLqNbD2w4lderKyAnxI5RJA/pub?gid=2073873169&single=true&output=csv" | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/redmine.list
+
+	#Convert CR+LR(Windows)  to LF (linux)
+	dos2unix ${BASEDIR}/redmine.list
+	else #CN use yiqixie
+		#b.yiqixie.csv.4 = sheet5 (Redmine)
+		cat ${BASEDIR}/yiqixie.csv.4 | sed '/^\s$*/d' | sort | uniq > ${BASEDIR}/redmine.list
+		#Convert CR+LR(Windows)  to LF (linux)
+		dos2unix ${BASEDIR}/redmine.list
+
+		#remove temp file
+		rm ${BASEDIR}/yiqixie.*
+	fi
+fi
+
+#Parsing redmine.list
+while IFS= read -r line
+do
+	 REDMINE+=($line)
+	 #--no-items Version: 1.1-20111020 does not support
+	 REDMINE+=($line)
+done < ${BASEDIR}/redmine.list
 
 #------------
-#|         |
+#|          |
 #- ---------|
-#|    |     |
+#|  |   |   |
 #------------
 
 HEIGHT=$((SCREEN_HEIGHT/2))
-WIDTH=$((SCREEN_WIDTH/2))
+WIDTH=$((SCREEN_WIDTH/3))
 CHOICE_HEIGHT=$((SCREEN_HEIGHT/2-4))
 
 
@@ -334,12 +367,25 @@ VAR=$(dialog \
 	--menu "${TAG[2]}" \
 	$((SCREEN_HEIGHT/2)) $WIDTH $((SCREEN_HEIGHT-4)) \
 	"${FEATURE[@]}" \
-	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) --keep-window --nocancel \
-	--inputbox "BugID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/2)) \#)
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3)) --keep-window --nocancel  \
+	--menu "$MENU_REDMINE" \
+	$((SCREEN_HEIGHT/2)) $WIDTH $((SCREEN_HEIGHT-4)) \
+	"${REDMINE[@]}" \
+	--and-widget --begin $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) --keep-window --nocancel \
+	--inputbox "ID:" $((SCREEN_HEIGHT/2)) $((SCREEN_WIDTH/3*2)) \#)
 #add $VAR to TAG()
 TAG+=($VAR)
 
 clear
+
+
+#merge Redmine + ID
+temp=${TAG[4]}${TAG[5]}
+unset TAG[5]
+TAG[4]=$temp
+echo "temp = $temp"
+
+
 echo "TAG2 = ${TAG[@]}"
 #=============================================================================#
 # 6. Replace array() with TAG()
